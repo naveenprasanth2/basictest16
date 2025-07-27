@@ -2,6 +2,8 @@ package com.symphony.p1;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -24,6 +26,7 @@ public class SharedQueue {
             lock.lock();
             while (queue.size() == capacity) {
                 spaceAvailable.await();
+                System.out.println("Inside put wait");
             }
             queue.add(val);
             itemAvailable.signalAll();
@@ -40,6 +43,7 @@ public class SharedQueue {
             lock.lock();
             while (queue.isEmpty()) {
                 itemAvailable.await();
+                System.out.println("Inside take wait");
             }
             System.out.println(queue.poll());
             spaceAvailable.signalAll();
@@ -48,5 +52,14 @@ public class SharedQueue {
         } finally {
             lock.unlock();
         }
+    }
+
+    public static void main(String[] args) {
+        SharedQueue sharedQueue = new SharedQueue();
+        Producer producer = new Producer(sharedQueue);
+        Consumer consumer = new Consumer(sharedQueue);
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        executorService.submit(producer);
+        executorService.submit(consumer);
     }
 }
